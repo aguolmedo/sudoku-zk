@@ -6,7 +6,7 @@ hljs.registerLanguage("typescript", typescript);
 
 /** Pull a `// #region name` block out of a source file, highlighted and with its indentation stripped. */
 export function region(source: string, name: string): string {
-  const match = source.match(new RegExp(`// #region ${name}\\n([\\s\\S]*?)\\n\\s*// #endregion`));
+  const match = source.replace(/\r\n/g, "\n").match(new RegExp(`// #region ${name}\\n([\\s\\S]*?)\\n\\s*// #endregion`));
   if (!match) throw new Error(`Missing "#region ${name}"`);
   const lines = match[1].split("\n");
   const indent = Math.min(...lines.filter((l) => l.trim()).map((l) => l.search(/\S/)));
