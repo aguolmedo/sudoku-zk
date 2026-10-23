@@ -1,0 +1,20 @@
+{
+  "name": "sudoku",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "node --experimental-strip-types src/sudoku.test.ts && node --experimental-strip-types src/zk.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.4"
+  },
+  "dependencies": {
+    "highlight.js": "^11.12.0"
+  }
+}

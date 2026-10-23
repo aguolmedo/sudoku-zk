@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sudoku — Verify vs. Solve</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <main>
+      <div class="play">
+        <header>
+          <h1>Sudoku</h1>
+          <p class="lede">Checking a solution is fast. Finding one means searching.</p>
+          <div class="tabs modes" id="mode-tabs" role="tablist" aria-label="Mode">
+            <button role="tab" data-mode="solve">Verify &amp; solve</button>
+            <button role="tab" data-mode="zk">Zero-knowledge</button>
+          </div>
+        </header>
+
+        <div class="options">
+          <label>
+            Puzzle
+            <select id="puzzle">
+              <option value="example">Wikipedia example</option>
+              <option value="worst">Worst case</option>
+              <option value="custom">Build your own</option>
+            </select>
+          </label>
+          <label data-show="solve">
+            Solver
+            <select id="strategy">
+              <option value="smart">Smart search</option>
+              <option value="brute">Brute force</option>
+            </select>
+          </label>
+          <label data-show="zk" hidden>
+            Prover
+            <select id="zk-prover">
+              <option value="honest">Honest</option>
+              <option value="cheat">Cheating</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- Verify & solve -->
+        <div class="mode-panel" data-show="solve">
+          <div id="board" class="board" role="grid" aria-label="Sudoku board"></div>
+
+          <div class="controls">
+            <button id="verify">Verify</button>
+            <button id="solve">Solve</button>
+            <button id="stop" class="danger" hidden>Stop</button>
+            <button id="reset" class="secondary">Reset</button>
+            <button id="clear" class="secondary">Blank board</button>
+          </div>
+
+          <section class="results" aria-live="polite">
+            <article class="card" id="verify-card">
+              <h2>Check <span>Verify</span></h2>
+              <p class="metric"><span class="value">—</span> <span class="unit">cell checks</span></p>
+              <p class="detail">Not run yet.</p>
+              <p class="big-o"><b>O(n²)</b> <span id="verify-bound"></span></p>
+            </article>
+            <article class="card" id="solve-card">
+              <h2>Search <span>Solve</span></h2>
+              <p class="metric"><span class="value">—</span> <span class="unit">guesses</span></p>
+              <p class="detail">Not run yet.</p>
+              <p class="big-o"><b>O(nᵏ)</b> <span id="solve-bound"></span></p>
+            </article>
+          </section>
+          <p id="compare" class="compare"></p>
+        </div>
+
+        <!-- Zero-knowledge -->
+        <div class="mode-panel" data-show="zk" hidden>
+          <div id="zk-board" class="board" aria-label="Committed Sudoku board"></div>
+
+          <div class="zk-controls">
+            <select id="zk-challenge" aria-label="Challenge"></select>
+            <button id="zk-open">Challenge</button>
+            <button id="zk-random">Random</button>
+            <button id="zk-run" class="secondary">Run 100 rounds</button>
+            <button id="zk-restart" class="secondary">Restart</button>
+          </div>
+
+          <section class="card" id="zk-round" aria-live="polite">
+            <h2 id="zk-round-label">Round 1</h2>
+            <p class="detail" id="zk-round-detail"></p>
+            <p class="zk-relabel" id="zk-relabel" hidden></p>
+            <div class="transcript" id="zk-transcript-wrap" hidden>
+              <table>
+                <thead>
+                  <tr><th>Cell</th><th>Opened</th><th>Nonce</th><th>Commitment</th><th></th></tr>
+                </thead>
+                <tbody id="zk-transcript"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="card" id="zk-stats">
+            <h2>Verifier confidence</h2>
+            <p class="metric"><span class="value" id="zk-passed">0</span> <span class="unit">rounds passed</span></p>
+            <div class="meter"><div id="zk-meter"></div></div>
+            <p class="detail" id="zk-confidence"></p>
+          </section>
+        </div>
+      </div>
+
+      <aside class="side">
+        <!-- Verify & solve -->
+        <div class="mode-panel" data-show="solve">
+          <section class="info">
+            <h2>Complexity</h2>
+            <p>
+              For an <i>n</i>×<i>n</i> grid (<i>n</i> = 9 here) with <i>k</i> empty cells:
+            </p>
+            <dl>
+              <dt>Verify <b>O(n²)</b></dt>
+              <dd>
+                Check each of the 3<i>n</i> rows, columns and boxes, <i>n</i> cells each:
+                3<i>n</i>² checks. That's linear in the number of cells, so it's polynomial time.
+              </dd>
+              <dt>Solve <b>O(nᵏ)</b></dt>
+              <dd>
+                Each empty cell can hold up to <i>n</i> values, so the search tree has up to
+                <i>n</i><sup><i>k</i></sup> leaves. Backtracking cuts off branches that break a rule early,
+                which is why it actually tries far fewer, but the worst case is still exponential.
+              </dd>
+            </dl>
+            <table>
+              <thead>
+                <tr>
+                  <th>Grid</th>
+                  <th>Verify: 3n²</th>
+                  <th>Search bound: n<sup>n²</sup></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>4×4</td><td>48</td><td>4.3 × 10<sup>9</sup></td></tr>
+                <tr class="current"><td>9×9</td><td>243</td><td>2.0 × 10<sup>77</sup></td></tr>
+                <tr><td>16×16</td><td>768</td><td>1.8 × 10<sup>308</sup></td></tr>
+                <tr><td>25×25</td><td>1,875</td><td>5.2 × 10<sup>873</sup></td></tr>
+              </tbody>
+            </table>
+            <p class="note">
+              The search bound assumes an empty grid. <i>n</i> has to be a perfect square so the boxes fit.
+              Generalized <i>n</i>×<i>n</i> Sudoku is <b>NP-complete</b>: a proposed solution can be checked in
+              polynomial time, and no known algorithm finds a solution in polynomial time in the worst case.
+              Finding one would prove P = NP.
+            </p>
+          </section>
+
+          <section class="code">
+            <h2>Implementation</h2>
+            <p>
+              Both solvers run the same backtracking search. The only difference is which empty cell
+              they fill next.
+            </p>
+            <div class="tabs" id="solver-tabs" role="tablist" aria-label="Solver">
+              <button role="tab" data-strategy="brute">Brute force</button>
+              <button role="tab" data-strategy="smart">Smart search</button>
+            </div>
+            <h3>Pick the next cell <span>differs</span></h3>
+            <pre><code id="code-pick"></code></pre>
+            <h3>Backtracking search <span>shared</span></h3>
+            <pre><code id="code-search"></code></pre>
+            <p class="note">This is the actual code from <code>src/sudoku.ts</code>.</p>
+          </section>
+        </div>
+
+        <!-- Zero-knowledge -->
+        <div class="mode-panel" data-show="zk" hidden>
+          <section class="info">
+            <h2>Zero-knowledge proof</h2>
+            <p>
+              The prover convinces you they know a solution to this puzzle without showing you any of it.
+              You play the verifier.
+            </p>
+            <ol>
+              <li>
+                <b>Relabel.</b> The prover picks a fresh random σ that renames the digits 1–9 (say 1→7,
+                2→3). The grid is still a valid solution.
+              </li>
+              <li>
+                <b>Commit.</b> The prover publishes hash(value ‖ nonce) for all 81 cells. The values are
+                locked in but hidden; each locked cell shows the start of its hash.
+              </li>
+              <li>
+                <b>Challenge.</b> You pick one of 28 checks: a row, a column, a box, or the starting
+                numbers.
+              </li>
+              <li>
+                <b>Open.</b> The prover reveals only those cells, plus σ for the starting numbers. You check
+                every hash and the Sudoku rule.
+              </li>
+              <li><b>Repeat.</b> The next round uses a new σ and new nonces.</li>
+            </ol>
+            <dl>
+              <dt>Completeness</dt>
+              <dd>An honest prover passes every challenge.</dd>
+              <dt>Soundness <b>(27/28)ᵏ</b></dt>
+              <dd>
+                A wrong grid fails at least one of the 28 checks, so each round catches a cheater with
+                probability at least 1/28. After <i>k</i> rounds, a cheater gets through with probability at
+                most (27/28)<sup><i>k</i></sup>.
+              </dd>
+              <dt>Zero knowledge</dt>
+              <dd>
+                Each opened row, column or box is a random arrangement of 1–9 because σ is fresh, and you
+                already knew the starting numbers. You could have generated everything you see yourself,
+                so you learn nothing about the solution.
+              </dd>
+            </dl>
+            <p class="note">
+              Based on Gradwohl, Naor, Pinkas &amp; Rothblum (2007), <i>Cryptographic and Physical
+              Zero-Knowledge Proof Systems for Solutions of Sudoku Puzzles</i>. Because Sudoku is
+              NP-complete, this gives a zero-knowledge proof for every problem in NP (Goldreich, Micali
+              &amp; Wigderson, 1986).
+            </p>
+          </section>
+
+          <section class="code">
+            <h2>Implementation</h2>
+            <p>The prover's two steps and the verifier's check, from <code>src/zk.ts</code>.</p>
+            <div class="tabs" id="zk-code-tabs" role="tablist" aria-label="Protocol step">
+              <button role="tab" data-region="commit">Commit</button>
+              <button role="tab" data-region="open">Open</button>
+              <button role="tab" data-region="verify">Verify</button>
+            </div>
+            <pre><code id="zk-code" class="hljs"></code></pre>
+          </section>
+        </div>
+      </aside>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
